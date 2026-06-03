@@ -34,6 +34,8 @@ const titles={
 generate:"Generate Blog",
 manage:"My Blogs",
 editor:"Blog Editor",
+humanize:"Humanize",
+subscription:"Subscription",
 settings:"Settings"
 }
 

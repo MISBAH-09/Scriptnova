@@ -460,6 +460,7 @@ def humanize_content(content: str, style: str = "natural"):
 # ── Serializer ────────────────────────────────────────────────────────────────
 
 def blog_to_dict(blog, include_content=True):
+    author_name = f"{blog.user.first_name} {blog.user.last_name}".strip() or blog.user.username
     d = {
         "id":                blog.id,
         "prompt":            blog.prompt,
@@ -469,9 +470,16 @@ def blog_to_dict(blog, include_content=True):
         "length_preference": blog.length_preference,
         "word_count":        blog.word_count,
         "slug":              blog.slug,
+        "published":         blog.published,
         "favourite":         blog.favourite,
         "is_favourite":      blog.favourite == "favourite",
         "is_humanized":      bool(blog.humanized_content),
+        "author":            {
+            "id":       blog.user.id,
+            "username": blog.user.username,
+            "name":     author_name,
+        },
+        "author_name":       author_name,
         "created_at":        blog.created_at.isoformat() if blog.created_at else None,
         "updated_at":        blog.updated_at.isoformat() if blog.updated_at else None,
     }

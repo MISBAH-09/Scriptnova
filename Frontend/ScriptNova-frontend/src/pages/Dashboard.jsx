@@ -10,6 +10,7 @@ import BlogManager from "../components/dashboard/BlogManager"
 import BlogEditor from "../components/dashboard/BlogEditor"
 import Humanize from "../components/dashboard/Humanize"
 import Settings from "../components/dashboard/Settings"
+import PricingSection from "../components/PricingSection"
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -60,6 +61,9 @@ export default function Dashboard() {
 
       case "settings":
         return <Settings />
+
+      case "subscription":
+        return <PricingSection />
 
       default:
         return (
