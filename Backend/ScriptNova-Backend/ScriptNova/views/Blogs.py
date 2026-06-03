@@ -633,6 +633,7 @@ class BlogListCreateView(APIView):
         tone              = request.data.get("tone", "")
         length_preference = request.data.get("length_preference", "")
         word_count        = request.data.get("word_count", 0)
+        published         = bool(request.data.get("published", False))
 
         if not title:
             return Response({"success": False, "message": "Title is required"}, status=400)
@@ -644,7 +645,7 @@ class BlogListCreateView(APIView):
         blog = Blog.objects.create(
             user=user, prompt=prompt_val, title=title, content=content,
             keywords=keywords, tone=tone, length_preference=length_preference,
-            word_count=word_count,
+            word_count=word_count, published=published,
         )
         return Response({"success": True, "data": blog_to_dict(blog)}, status=201)
 
@@ -668,7 +669,7 @@ class BlogDetailView(APIView):
             return Response({"success": False, "message": "Blog not found"}, status=404)
 
         updatable = ["prompt", "title", "content", "humanized_content", "keywords",
-                     "tone", "length_preference", "word_count", "favourite"]
+                     "tone", "length_preference", "word_count", "favourite", "published"]
         for field in updatable:
             if field in request.data:
                 val = request.data[field]
@@ -695,10 +696,9 @@ class BlogDetailView(APIView):
 
 
 class BlogBySlugView(APIView):
-    @require_token
     def get(self, request, slug):
         try:
-            blog = Blog.objects.get(slug=slug, user=request.auth_user)
+            blog = Blog.objects.get(slug=slug, published=True)
             return Response({"success": True, "data": blog_to_dict(blog)})
         except Blog.DoesNotExist:
             return Response({"success": False, "message": "Blog not found"}, status=404)
@@ -720,6 +720,20 @@ class BlogFavouriteView(APIView):
             "favourite":    blog.favourite,
             "is_favourite": blog.favourite == "favourite",
         })
+
+
+class PublishedBlogListView(APIView):
+    def get(self, request):
+        qs = Blog.objects.filter(published=True).select_related("user")
+
+        limit = request.query_params.get("limit")
+        if limit:
+            try:
+                qs = qs[:int(limit)]
+            except (ValueError, TypeError):
+                pass
+
+        return Response({"success": True, "data": [blog_to_dict(b, include_content=True) for b in qs]})
 
 
 class BlogStatsView(APIView):

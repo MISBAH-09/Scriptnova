@@ -34,6 +34,7 @@ class Blog(models.Model):
     length_preference = models.CharField(max_length=100, blank=True, default='')
     word_count        = models.PositiveIntegerField(default=0)
     slug              = models.SlugField(max_length=600, blank=True, unique=True)
+    published         = models.BooleanField(default=False)
     favourite         = models.CharField(
                             max_length=20,
                             choices=FAVOURITE_CHOICES,

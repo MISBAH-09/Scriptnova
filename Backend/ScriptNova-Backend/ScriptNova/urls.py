@@ -4,7 +4,7 @@ from ScriptNova.views.Blogs import (
     GenerateBlog, GenerateKeywords, RegenerateTitle, RephraseBlog,
     HumanizeView,
     BlogListCreateView, BlogDetailView, BlogBySlugView,
-    BlogFavouriteView, BlogStatsView,
+    BlogFavouriteView, BlogStatsView, PublishedBlogListView,
 )
 from ScriptNova.views.Payments import CreateCheckoutSession, PaymentStatus, StripeWebhook
 
@@ -26,6 +26,7 @@ urlpatterns = [
 
     # ── Blog CRUD ─────────────────────────────────────────────────────────────
     path('blogs/',                    BlogListCreateView.as_view(), name='blog-list-create'),
+    path('blogs/published/',          PublishedBlogListView.as_view(), name='published-blogs'),
     path('blogs/stats/',              BlogStatsView.as_view(),      name='blog-stats'),
     path('blogs/slug/<slug:slug>/',   BlogBySlugView.as_view(),     name='blog-by-slug'),
     path('blogs/<int:pk>/',           BlogDetailView.as_view(),     name='blog-detail'),

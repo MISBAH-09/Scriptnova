@@ -198,6 +198,16 @@ export const getUserBlogs = async ({ limit, favourite } = {}) => {
   } catch (e) { handleError(e); }
 };
 
+export const getPublishedBlogs = async ({ limit } = {}) => {
+  try {
+    const params = {};
+    if (limit) params.limit = limit;
+    const r = await api.get("/blogs/published/", { params });
+    const data = r.data.data || r.data;
+    return Array.isArray(data) ? data : [];
+  } catch (e) { handleError(e); }
+};
+
 export const getBlog = async (id) => {
   try {
     const r = await api.get(`/blogs/${id}/`);

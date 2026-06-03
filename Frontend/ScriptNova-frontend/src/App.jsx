@@ -3,6 +3,8 @@ import Navbar from './components/Navbar.jsx';
 import Auth from './pages/Auth';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
+import PublicBlogs from './pages/PublicBlogs';
+import PublicBlog from './pages/PublicBlog';
 import './App.css'
 
 function ProtectedRoute({ children }) {
@@ -22,6 +24,8 @@ export default function App() {
       {!hideNav && <Navbar />}
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/blogs" element={<PublicBlogs />} />
+        <Route path="/blog/:slug" element={<PublicBlog />} />
         <Route path="/auth" element={<Auth />} />
         <Route
           path="/dashboard"
