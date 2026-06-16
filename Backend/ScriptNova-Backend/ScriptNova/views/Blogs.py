@@ -433,7 +433,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from ScriptNova.middleware.auth import require_token
-from ScriptNova.models import Blog
+from ScriptNova.models import Blog, BlogComment, BlogReaction
 
 # ✅ import helpers
 from .blogshelper import (
@@ -446,6 +446,84 @@ from .blogshelper import (
     LENGTH_MAP,
     QUALITY_MODEL
 )
+
+
+def _display_name(user):
+    return f"{user.first_name} {user.last_name}".strip() or user.username or user.email
+
+
+def _reader_identity(request):
+    user = getattr(request, "auth_user", None)
+    if user:
+        return {
+            "user": user,
+            "name": _display_name(user),
+            "email": user.email.lower(),
+            "error": None,
+        }
+
+    name = request.data.get("reader_name", "").strip()
+    email = request.data.get("reader_email", "").strip().lower()
+    if not name or not email:
+        return {
+            "user": None,
+            "name": "",
+            "email": "",
+            "error": "Name and email are required",
+        }
+
+    return {
+        "user": None,
+        "name": name,
+        "email": email,
+        "error": None,
+    }
+
+
+def _request_reader_email(request):
+    user = getattr(request, "auth_user", None)
+    if user:
+        return user.email.lower()
+    return request.query_params.get("reader_email", "").strip().lower()
+
+
+def comment_to_dict(comment):
+    name = comment.reader_name or (_display_name(comment.user) if comment.user else "Reader")
+    email = comment.reader_email or (comment.user.email if comment.user else "")
+    return {
+        "id": comment.id,
+        "body": comment.body,
+        "author": {
+            "id": comment.user.id if comment.user else None,
+            "username": comment.user.username if comment.user else "",
+            "name": name,
+            "email": email,
+        },
+        "created_at": comment.created_at.isoformat() if comment.created_at else None,
+        "updated_at": comment.updated_at.isoformat() if comment.updated_at else None,
+    }
+
+
+def discussion_to_dict(blog, user=None, reader_email=""):
+    reactions = blog.reactions.all()
+    user_reaction = None
+    if user:
+        match = reactions.filter(reader_email=user.email.lower()).first() or reactions.filter(user=user).first()
+        user_reaction = match.reaction if match else None
+    elif reader_email:
+        match = reactions.filter(reader_email=reader_email.lower()).first()
+        user_reaction = match.reaction if match else None
+
+    return {
+        "blog_id": blog.id,
+        "likes": reactions.filter(reaction=BlogReaction.LIKE).count(),
+        "dislikes": reactions.filter(reaction=BlogReaction.DISLIKE).count(),
+        "user_reaction": user_reaction,
+        "comments": [
+            comment_to_dict(comment)
+            for comment in blog.comments.select_related("user").all()
+        ],
+    }
 
 # ── AI Views ──────────────────────────────────────────────────────────────────
 
@@ -719,6 +797,86 @@ class BlogFavouriteView(APIView):
             "id":           blog.id,
             "favourite":    blog.favourite,
             "is_favourite": blog.favourite == "favourite",
+        })
+
+
+class BlogDiscussionView(APIView):
+    def get(self, request, pk):
+        try:
+            blog = Blog.objects.get(pk=pk, published=True)
+        except Blog.DoesNotExist:
+            return Response({"success": False, "message": "Blog not found"}, status=404)
+
+        return Response({
+            "success": True,
+            "data": discussion_to_dict(
+                blog,
+                getattr(request, "auth_user", None),
+                _request_reader_email(request),
+            )
+        })
+
+
+class BlogCommentView(APIView):
+    def post(self, request, pk):
+        try:
+            blog = Blog.objects.get(pk=pk, published=True)
+        except Blog.DoesNotExist:
+            return Response({"success": False, "message": "Blog not found"}, status=404)
+
+        body = request.data.get("body", "").strip()
+        if not body:
+            return Response({"success": False, "message": "Comment is required"}, status=400)
+
+        identity = _reader_identity(request)
+        if identity["error"]:
+            return Response({"success": False, "message": identity["error"]}, status=400)
+
+        comment = BlogComment.objects.create(
+            blog=blog,
+            user=identity["user"],
+            reader_name=identity["name"],
+            reader_email=identity["email"],
+            body=body,
+        )
+        return Response({"success": True, "data": comment_to_dict(comment)}, status=201)
+
+
+class BlogReactionView(APIView):
+    def post(self, request, pk):
+        try:
+            blog = Blog.objects.get(pk=pk, published=True)
+        except Blog.DoesNotExist:
+            return Response({"success": False, "message": "Blog not found"}, status=404)
+
+        reaction = request.data.get("reaction")
+        if reaction not in [BlogReaction.LIKE, BlogReaction.DISLIKE]:
+            return Response({"success": False, "message": "Reaction must be like or dislike"}, status=400)
+
+        identity = _reader_identity(request)
+        if identity["error"]:
+            return Response({"success": False, "message": identity["error"]}, status=400)
+
+        existing = BlogReaction.objects.filter(blog=blog, reader_email=identity["email"]).first()
+        if existing and existing.reaction == reaction:
+            existing.delete()
+        elif existing:
+            existing.reaction = reaction
+            existing.reader_name = identity["name"]
+            existing.user = identity["user"]
+            existing.save(update_fields=["reaction", "reader_name", "user", "updated_at"])
+        else:
+            BlogReaction.objects.create(
+                blog=blog,
+                user=identity["user"],
+                reader_name=identity["name"],
+                reader_email=identity["email"],
+                reaction=reaction,
+            )
+
+        return Response({
+            "success": True,
+            "data": discussion_to_dict(blog, identity["user"], identity["email"]),
         })
 
 

@@ -33,6 +33,7 @@ export default function Header({page,setMobileMenu}){
 const titles={
 generate:"Generate Blog",
 manage:"My Blogs",
+reader:"Read Blogs",
 editor:"Blog Editor",
 humanize:"Humanize",
 subscription:"Subscription",

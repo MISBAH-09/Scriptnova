@@ -11,6 +11,7 @@ import BlogEditor from "../components/dashboard/BlogEditor"
 import Humanize from "../components/dashboard/Humanize"
 import Settings from "../components/dashboard/Settings"
 import PricingSection from "../components/PricingSection"
+import ReaderBlogs from "../components/dashboard/ReaderBlogs"
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -50,6 +51,9 @@ export default function Dashboard() {
             setPage={setPage}
           />
         )
+
+      case "reader":
+        return <ReaderBlogs />
 
       case "humanize":
         return (

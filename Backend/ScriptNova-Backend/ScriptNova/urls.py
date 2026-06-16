@@ -5,6 +5,7 @@ from ScriptNova.views.Blogs import (
     HumanizeView,
     BlogListCreateView, BlogDetailView, BlogBySlugView,
     BlogFavouriteView, BlogStatsView, PublishedBlogListView,
+    BlogDiscussionView, BlogCommentView, BlogReactionView,
 )
 from ScriptNova.views.Payments import CreateCheckoutSession, PaymentStatus, StripeWebhook
 
@@ -31,6 +32,9 @@ urlpatterns = [
     path('blogs/slug/<slug:slug>/',   BlogBySlugView.as_view(),     name='blog-by-slug'),
     path('blogs/<int:pk>/',           BlogDetailView.as_view(),     name='blog-detail'),
     path('blogs/<int:pk>/favourite/', BlogFavouriteView.as_view(),  name='blog-favourite'),
+    path('blogs/<int:pk>/discussion/', BlogDiscussionView.as_view(), name='blog-discussion'),
+    path('blogs/<int:pk>/comments/', BlogCommentView.as_view(), name='blog-comment'),
+    path('blogs/<int:pk>/reaction/', BlogReactionView.as_view(), name='blog-reaction'),
 
     # Payments
     path('payments/create-checkout-session/', CreateCheckoutSession.as_view(), name='create-checkout-session'),

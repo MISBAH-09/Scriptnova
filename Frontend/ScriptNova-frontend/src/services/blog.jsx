@@ -248,3 +248,34 @@ export const getBlogStats = async () => {
     return r.data.data || r.data;
   } catch (e) { handleError(e); }
 };
+
+export const getBlogDiscussion = async (id, reader = {}) => {
+  try {
+    const params = {};
+    if (reader.email) params.reader_email = reader.email;
+    const r = await api.get(`/blogs/${id}/discussion/`, { params });
+    return r.data.data || r.data;
+  } catch (e) { handleError(e); }
+};
+
+export const addBlogComment = async (id, body, reader = {}) => {
+  try {
+    const r = await api.post(`/blogs/${id}/comments/`, {
+      body,
+      reader_name: reader.name,
+      reader_email: reader.email,
+    });
+    return r.data.data || r.data;
+  } catch (e) { handleError(e); }
+};
+
+export const reactToBlog = async (id, reaction, reader = {}) => {
+  try {
+    const r = await api.post(`/blogs/${id}/reaction/`, {
+      reaction,
+      reader_name: reader.name,
+      reader_email: reader.email,
+    });
+    return r.data.data || r.data;
+  } catch (e) { handleError(e); }
+};
